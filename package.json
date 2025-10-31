@@ -8,8 +8,10 @@
     "build": "NODE_OPTIONS=--max-old-space-size=2048 vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
+    "serve": "serve dist -s -l ${PORT:-3000}",
+    "start": "serve dist -s -l $PORT",
     "lint": "eslint .",
-    "serve": "serve dist -s -l ${PORT:-3000}"
+    "clean": "rm -rf dist node_modules/.vite"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
