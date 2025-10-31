@@ -5,7 +5,7 @@ import { Building2, Users, TrendingUp, DollarSign, Eye, Target, MapPin, BarChart
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useEffect, useState } from "react";
-import { SupabaseService } from "../../backend/app/services/SupabaseService";
+import { SupabaseService } from "../SupabaseService";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 

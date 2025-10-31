@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useEffect, useState, useCallback } from "react";
-import { supabase } from "../../backend/app/services/SupabaseService";
+import { supabase } from "../SupabaseService";
 
 interface Property {
   id: string;

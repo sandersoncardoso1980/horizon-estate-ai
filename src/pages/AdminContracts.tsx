@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useEffect, useState } from "react";
-import { supabase } from "../../backend/app/services/SupabaseService";
+import { supabase } from "../SupabaseService";
 
 interface Contract {
   id: number;

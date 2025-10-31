@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
-import { supabase } from "../../backend/app/services/SupabaseService";
+import { supabase } from "../SupabaseService";
 
 // Definir a interface das props
 interface AddPropertyDialogProps {
