@@ -1,0 +1,26 @@
+{
+  "name": "real-estate-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Backend para sistema de BI imobiliário com ML",
+  "main": "app/server.js",
+  "scripts": {
+    "dev": "node app/server.js",
+    "start": "node app/server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.78.0",
+    "axios": "^1.4.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^4.18.0",
+    "mongoose": "^7.0.0"
+  },
+  "keywords": [
+    "real-estate",
+    "machine-learning",
+    "bi"
+  ],
+  "author": "Seu Nome",
+  "license": "MIT"
+}

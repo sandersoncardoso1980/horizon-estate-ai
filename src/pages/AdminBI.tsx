@@ -4,73 +4,157 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, ScatterChart, Scatter, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { TrendingUp, TrendingDown, Brain, Target, Sparkles, Activity } from "lucide-react";
+import { TrendingUp, TrendingDown, Brain, Target, Sparkles, Activity, RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
+
+// Interface para os dados do backend
+interface DashboardData {
+  priceData: Array<{
+    month: string;
+    previsto: number;
+    real: number | null;
+    confianca: number;
+  }>;
+  regionData: Array<{
+    region: string;
+    value: number;
+    growth: number;
+  }>;
+  searchData: Array<{
+    property: string;
+    views: number;
+    conversao: number;
+  }>;
+  leadScoreData: Array<{
+    score: string;
+    quantidade: number;
+    conversao: number;
+  }>;
+  heatmapData: Array<{
+    zona: string;
+    periodo: string;
+    demanda: number;
+  }>;
+  performanceData: Array<{
+    categoria: string;
+    valor: number;
+    meta: number;
+  }>;
+  conversionFunnel: Array<{
+    stage: string;
+    total: number;
+    leads: number;
+  }>;
+}
 
 const AdminBI = () => {
-  const priceData = [
-    { month: 'Jan', previsto: 850000, real: 820000, confianca: 95 },
-    { month: 'Fev', previsto: 870000, real: 890000, confianca: 94 },
-    { month: 'Mar', previsto: 890000, real: 880000, confianca: 96 },
-    { month: 'Abr', previsto: 920000, real: 950000, confianca: 93 },
-    { month: 'Mai', previsto: 950000, real: 940000, confianca: 97 },
-    { month: 'Jun', previsto: 980000, real: 1020000, confianca: 95 },
-    { month: 'Jul', previsto: 1010000, real: null, confianca: 92 },
-    { month: 'Ago', previsto: 1040000, real: null, confianca: 89 },
-  ];
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [dataSource, setDataSource] = useState<'backend' | 'mock'>('mock');
 
-  const regionData = [
-    { region: 'Centro', value: 35, growth: 12 },
-    { region: 'Zona Sul', value: 28, growth: 8 },
-    { region: 'Zona Norte', value: 20, growth: -3 },
-    { region: 'Zona Oeste', value: 17, growth: 5 },
-  ];
+  // Dados mock como fallback
+  const mockData: DashboardData = {
+    priceData: [
+      { month: 'Jan', previsto: 850000, real: 820000, confianca: 95 },
+      { month: 'Fev', previsto: 870000, real: 890000, confianca: 94 },
+      { month: 'Mar', previsto: 890000, real: 880000, confianca: 96 },
+      { month: 'Abr', previsto: 920000, real: 950000, confianca: 93 },
+      { month: 'Mai', previsto: 950000, real: 940000, confianca: 97 },
+      { month: 'Jun', previsto: 980000, real: 1020000, confianca: 95 },
+      { month: 'Jul', previsto: 1010000, real: null, confianca: 92 },
+      { month: 'Ago', previsto: 1040000, real: null, confianca: 89 },
+    ],
+    regionData: [
+      { region: 'Centro', value: 35, growth: 12 },
+      { region: 'Zona Sul', value: 28, growth: 8 },
+      { region: 'Zona Norte', value: 20, growth: -3 },
+      { region: 'Zona Oeste', value: 17, growth: 5 },
+    ],
+    searchData: [
+      { property: 'AP001 - Apartamento Centro', views: 245, conversao: 18 },
+      { property: 'CS002 - Casa Alphaville', views: 198, conversao: 22 },
+      { property: 'LF003 - Loft Vila Madalena', views: 176, conversao: 15 },
+      { property: 'AP004 - Cobertura Duplex', views: 154, conversao: 25 },
+      { property: 'TE005 - Terreno Comercial', views: 132, conversao: 8 },
+    ],
+    leadScoreData: [
+      { score: '0-20', quantidade: 15, conversao: 2 },
+      { score: '21-40', quantidade: 23, conversao: 5 },
+      { score: '41-60', quantidade: 35, conversao: 12 },
+      { score: '61-80', quantidade: 28, conversao: 18 },
+      { score: '81-100', quantidade: 18, conversao: 28 },
+    ],
+    heatmapData: [
+      { zona: 'Centro', periodo: 'Manhã', demanda: 85 },
+      { zona: 'Centro', periodo: 'Tarde', demanda: 95 },
+      { zona: 'Centro', periodo: 'Noite', demanda: 70 },
+      { zona: 'Zona Sul', periodo: 'Manhã', demanda: 75 },
+      { zona: 'Zona Sul', periodo: 'Tarde', demanda: 88 },
+      { zona: 'Zona Sul', periodo: 'Noite', demanda: 92 },
+      { zona: 'Zona Norte', periodo: 'Manhã', demanda: 60 },
+      { zona: 'Zona Norte', periodo: 'Tarde', demanda: 65 },
+      { zona: 'Zona Norte', periodo: 'Noite', demanda: 55 },
+      { zona: 'Zona Oeste', periodo: 'Manhã', demanda: 70 },
+      { zona: 'Zona Oeste', periodo: 'Tarde', demanda: 78 },
+      { zona: 'Zona Oeste', periodo: 'Noite', demanda: 72 },
+    ],
+    performanceData: [
+      { categoria: 'Preço', valor: 92, meta: 85 },
+      { categoria: 'Localização', valor: 88, meta: 80 },
+      { categoria: 'Tamanho', valor: 85, meta: 75 },
+      { categoria: 'Condição', valor: 90, meta: 85 },
+      { categoria: 'Amenidades', valor: 78, meta: 70 },
+    ],
+    conversionFunnel: [
+      { stage: 'Visualizações', total: 2450, leads: 0 },
+      { stage: 'Interesse', total: 892, leads: 0 },
+      { stage: 'Visitas', total: 423, leads: 0 },
+      { stage: 'Propostas', total: 156, leads: 0 },
+      { stage: 'Fechamentos', total: 48, leads: 0 },
+    ]
+  };
 
-  const searchData = [
-    { property: 'AP001 - Apartamento Centro', views: 245, conversao: 18 },
-    { property: 'CS002 - Casa Alphaville', views: 198, conversao: 22 },
-    { property: 'LF003 - Loft Vila Madalena', views: 176, conversao: 15 },
-    { property: 'AP004 - Cobertura Duplex', views: 154, conversao: 25 },
-    { property: 'TE005 - Terreno Comercial', views: 132, conversao: 8 },
-  ];
+  // Buscar dados do backend
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      console.log('🔄 Buscando dados do backend...');
+      
+      const response = await fetch('http://localhost:5000/api/bi/dashboard-data');
+      
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        console.log('✅ Dados recebidos do backend:', result.data);
+        setDashboardData(result.data);
+        setDataSource('backend');
+        setLastUpdate(new Date(result.lastUpdated));
+      } else {
+        throw new Error('Resposta inválida do servidor');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao buscar dados do backend:', error);
+      console.log('🔄 Usando dados mock...');
+      setDashboardData(mockData);
+      setDataSource('mock');
+      setLastUpdate(new Date());
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const leadScoreData = [
-    { score: '0-20', quantidade: 15, conversao: 2 },
-    { score: '21-40', quantidade: 23, conversao: 5 },
-    { score: '41-60', quantidade: 35, conversao: 12 },
-    { score: '61-80', quantidade: 28, conversao: 18 },
-    { score: '81-100', quantidade: 18, conversao: 28 },
-  ];
+  // Carregar dados ao montar o componente
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-  const heatmapData = [
-    { zona: 'Centro', periodo: 'Manhã', demanda: 85 },
-    { zona: 'Centro', periodo: 'Tarde', demanda: 95 },
-    { zona: 'Centro', periodo: 'Noite', demanda: 70 },
-    { zona: 'Zona Sul', periodo: 'Manhã', demanda: 75 },
-    { zona: 'Zona Sul', periodo: 'Tarde', demanda: 88 },
-    { zona: 'Zona Sul', periodo: 'Noite', demanda: 92 },
-    { zona: 'Zona Norte', periodo: 'Manhã', demanda: 60 },
-    { zona: 'Zona Norte', periodo: 'Tarde', demanda: 65 },
-    { zona: 'Zona Norte', periodo: 'Noite', demanda: 55 },
-    { zona: 'Zona Oeste', periodo: 'Manhã', demanda: 70 },
-    { zona: 'Zona Oeste', periodo: 'Tarde', demanda: 78 },
-    { zona: 'Zona Oeste', periodo: 'Noite', demanda: 72 },
-  ];
-
-  const performanceData = [
-    { categoria: 'Preço', valor: 92, meta: 85 },
-    { categoria: 'Localização', valor: 88, meta: 80 },
-    { categoria: 'Tamanho', valor: 85, meta: 75 },
-    { categoria: 'Condição', valor: 90, meta: 85 },
-    { categoria: 'Amenidades', valor: 78, meta: 70 },
-  ];
-
-  const conversionFunnel = [
-    { stage: 'Visualizações', total: 2450, leads: 0 },
-    { stage: 'Interesse', total: 892, leads: 0 },
-    { stage: 'Visitas', total: 423, leads: 0 },
-    { stage: 'Propostas', total: 156, leads: 0 },
-    { stage: 'Fechamentos', total: 48, leads: 0 },
-  ];
+  // Usar dados do backend ou mock como fallback
+  const data = dashboardData || mockData;
 
   const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted-foreground))'];
   
@@ -80,6 +164,25 @@ const AdminBI = () => {
     if (value >= 55) return '#F59E0B';
     return '#EF4444';
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <AdminSidebar />
+        <main className="ml-64 pt-20 p-8">
+          <div className="flex items-center justify-center h-96">
+            <div className="text-center">
+              <RefreshCw className="h-12 w-12 text-primary animate-spin mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Carregando Business Intelligence</h2>
+              <p className="text-muted-foreground">Conectando ao backend de dados...</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -96,10 +199,53 @@ const AdminBI = () => {
               </h1>
               <p className="text-muted-foreground">Insights avançados com Machine Learning</p>
             </div>
-            <Badge variant="outline" className="gap-2 px-4 py-2">
-              <Sparkles className="h-4 w-4" />
-              ML Atualizado há 5 min
-            </Badge>
+            <div className="flex items-center gap-4">
+              <Badge 
+                variant={dataSource === 'backend' ? "default" : "outline"} 
+                className="gap-2 px-4 py-2"
+              >
+                {dataSource === 'backend' ? (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Dados em Tempo Real
+                  </>
+                ) : (
+                  <>
+                    <Activity className="h-4 w-4" />
+                    Dados de Demonstração
+                  </>
+                )}
+              </Badge>
+              <button
+                onClick={fetchDashboardData}
+                className="flex items-center gap-2 px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Atualizar
+              </button>
+            </div>
+          </div>
+          
+          {/* Status do Data Source */}
+          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-4">
+                <span className={`font-medium ${dataSource === 'backend' ? 'text-green-600' : 'text-amber-600'}`}>
+                  {dataSource === 'backend' ? '✅ Conectado ao Backend' : '🔄 Usando Dados de Demonstração'}
+                </span>
+                <span className="text-muted-foreground">
+                  Última atualização: {lastUpdate.toLocaleTimeString()}
+                </span>
+              </div>
+              {dataSource === 'mock' && (
+                <button 
+                  onClick={fetchDashboardData}
+                  className="text-primary hover:underline text-xs"
+                >
+                  Tentar reconectar
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -211,7 +357,7 @@ const AdminBI = () => {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={320}>
-                    <ComposedChart data={priceData}>
+                    <ComposedChart data={data.priceData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" />
                       <YAxis />
@@ -251,7 +397,7 @@ const AdminBI = () => {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={320}>
-                    <BarChart data={conversionFunnel}>
+                    <BarChart data={data.conversionFunnel}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="stage" />
                       <YAxis />
@@ -260,8 +406,8 @@ const AdminBI = () => {
                     </BarChart>
                   </ResponsiveContainer>
                   <div className="mt-4 space-y-2">
-                    {conversionFunnel.map((item, idx) => {
-                      const conversion = idx > 0 ? ((item.total / conversionFunnel[idx - 1].total) * 100).toFixed(1) : 100;
+                    {data.conversionFunnel.map((item, idx) => {
+                      const conversion = idx > 0 ? ((item.total / data.conversionFunnel[idx - 1].total) * 100).toFixed(1) : 100;
                       return (
                         <div key={item.stage} className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">{item.stage}</span>
@@ -281,7 +427,7 @@ const AdminBI = () => {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={320}>
-                    <ComposedChart data={searchData} layout="vertical">
+                    <ComposedChart data={data.searchData} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis type="number" />
                       <YAxis dataKey="property" type="category" width={180} />
@@ -305,7 +451,7 @@ const AdminBI = () => {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={320}>
-                    <BarChart data={regionData}>
+                    <BarChart data={data.regionData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="region" />
                       <YAxis />
@@ -335,7 +481,7 @@ const AdminBI = () => {
                     <div key={zona}>
                       <h4 className="font-semibold mb-3">{zona}</h4>
                       <div className="grid grid-cols-3 gap-4">
-                        {heatmapData
+                        {data.heatmapData
                           .filter((item) => item.zona === zona)
                           .map((item) => (
                             <div
@@ -384,7 +530,7 @@ const AdminBI = () => {
                 <ResponsiveContainer width="100%" height={350}>
                   <PieChart>
                     <Pie
-                      data={regionData}
+                      data={data.regionData}
                       cx="50%"
                       cy="50%"
                       labelLine={true}
@@ -393,7 +539,7 @@ const AdminBI = () => {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {regionData.map((entry, index) => (
+                      {data.regionData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -416,7 +562,7 @@ const AdminBI = () => {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={320}>
-                    <BarChart data={leadScoreData}>
+                    <BarChart data={data.leadScoreData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="score" />
                       <YAxis />
@@ -434,7 +580,7 @@ const AdminBI = () => {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={320}>
-                    <LineChart data={leadScoreData}>
+                    <LineChart data={data.leadScoreData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="score" />
                       <YAxis />
@@ -474,7 +620,7 @@ const AdminBI = () => {
                     <Legend />
                     <Scatter 
                       name="Score vs Conversão" 
-                      data={leadScoreData} 
+                      data={data.leadScoreData} 
                       fill="hsl(var(--accent))" 
                     />
                   </ScatterChart>
@@ -494,7 +640,7 @@ const AdminBI = () => {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={400}>
-                  <RadarChart data={performanceData}>
+                  <RadarChart data={data.performanceData}>
                     <PolarGrid />
                     <PolarAngleAxis dataKey="categoria" />
                     <PolarRadiusAxis angle={90} domain={[0, 100]} />
