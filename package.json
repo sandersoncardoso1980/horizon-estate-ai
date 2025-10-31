@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "NODE_OPTIONS=--max-old-space-size=2048 vite build",
     "build:dev": "vite build --mode development",
-    "lint": "eslint .",
     "preview": "vite preview",
-    "start": "NODE_OPTIONS=--max-old-space-size=1024 serve dist -s -l $PORT"
+    "lint": "eslint .",
+    "serve": "serve dist -s -l ${PORT:-3000}"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
