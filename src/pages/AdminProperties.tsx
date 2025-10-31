@@ -2,7 +2,8 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Edit, Trash2 } from "lucide-react";
+import { Search, Edit, Trash2 } from "lucide-react";
+import AddPropertyDialog from "@/components/admin/AddPropertyDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -32,10 +33,7 @@ const AdminProperties = () => {
             <h1 className="text-3xl font-bold mb-2">Gerenciar Imóveis</h1>
             <p className="text-muted-foreground">Cadastre e gerencie todos os imóveis</p>
           </div>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Novo Imóvel
-          </Button>
+          <AddPropertyDialog />
         </div>
 
         <Card className="shadow-card mb-6">
