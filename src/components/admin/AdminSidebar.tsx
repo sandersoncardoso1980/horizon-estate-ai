@@ -7,7 +7,8 @@ import {
   TrendingUp, 
   Settings,
   Menu,
-  X
+  X,
+  Home
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -53,6 +54,21 @@ const AdminSidebar = () => {
           </Link>
         );
       })}
+      
+      {/* Separador e link para Landing Page */}
+      <div className="border-t border-border my-2 pt-4">
+        <Link
+          to="/"
+          onClick={onItemClick}
+          className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+            "hover:bg-muted text-foreground"
+          )}
+        >
+          <Home className="h-5 w-5" />
+          <span className="font-medium">Início (Landing Page)</span>
+        </Link>
+      </div>
     </nav>
   );
 
