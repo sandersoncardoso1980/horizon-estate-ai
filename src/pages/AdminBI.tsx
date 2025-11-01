@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, ScatterChart, Scatter, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { TrendingUp, TrendingDown, Brain, Target, Sparkles, Activity, RefreshCw } from "lucide-react";
+import { TrendingUp, TrendingDown, Brain, Target, Sparkles, Activity, RefreshCw, AlertCircle, Globe } from "lucide-react";
 import { useState, useEffect } from "react";
 
 // Interface para os dados do backend
@@ -51,7 +51,8 @@ const AdminBI = () => {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-  const [dataSource, setDataSource] = useState<'backend' | 'mock'>('mock');
+  const [dataSource, setDataSource] = useState<'local' | 'vercel' | 'mock'>('mock');
+  const [connectionError, setConnectionError] = useState<string>('');
 
   // Dados mock como fallback
   const mockData: DashboardData = {
@@ -119,10 +120,25 @@ const AdminBI = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Buscando dados do backend...');
+      setConnectionError('');
+      console.log('🔄 Buscando dados do dashboard...');
       
-      const response = await fetch('http://localhost:5000/api/bi/dashboard-data');
+      // URL dinâmica baseada no ambiente
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      const apiUrl = isDevelopment 
+        ? 'http://localhost:5000/api/bi/dashboard-data'
+        : '/api/bi/dashboard-data';
+
+      // Timeout de 5 segundos
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(apiUrl, {
+        signal: controller.signal
+      });
       
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
         throw new Error(`Erro HTTP: ${response.status}`);
       }
@@ -130,15 +146,26 @@ const AdminBI = () => {
       const result = await response.json();
       
       if (result.success && result.data) {
-        console.log('✅ Dados recebidos do backend:', result.data);
+        console.log('✅ Dados recebidos:', result.source);
         setDashboardData(result.data);
-        setDataSource('backend');
-        setLastUpdate(new Date(result.lastUpdated));
+        setDataSource(isDevelopment ? 'local' : 'vercel');
+        setLastUpdate(new Date(result.lastUpdated || new Date()));
       } else {
         throw new Error('Resposta inválida do servidor');
       }
     } catch (error) {
-      console.error('❌ Erro ao buscar dados do backend:', error);
+      console.error('❌ Erro ao buscar dados:', error);
+      
+      let errorMessage = 'Erro de conexão';
+      if (error.name === 'AbortError') {
+        errorMessage = 'Timeout: Servidor não respondeu';
+      } else if (error.message.includes('Failed to fetch')) {
+        errorMessage = 'Servidor indisponível';
+      } else {
+        errorMessage = `Erro: ${error.message}`;
+      }
+      
+      setConnectionError(errorMessage);
       console.log('🔄 Usando dados mock...');
       setDashboardData(mockData);
       setDataSource('mock');
@@ -176,7 +203,7 @@ const AdminBI = () => {
             <div className="text-center">
               <RefreshCw className="h-12 w-12 text-primary animate-spin mx-auto mb-4" />
               <h2 className="text-xl font-semibold mb-2">Carregando Business Intelligence</h2>
-              <p className="text-muted-foreground">Conectando ao backend de dados...</p>
+              <p className="text-muted-foreground">Conectando às fontes de dados...</p>
             </div>
           </div>
         </main>
@@ -202,18 +229,26 @@ const AdminBI = () => {
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <Badge 
-                variant={dataSource === 'backend' ? "default" : "outline"} 
+                variant={
+                  dataSource === 'local' ? "default" : 
+                  dataSource === 'vercel' ? "secondary" : "outline"
+                } 
                 className="gap-2 px-3 py-2 text-xs sm:text-sm w-full sm:w-auto justify-center"
               >
-                {dataSource === 'backend' ? (
+                {dataSource === 'local' ? (
                   <>
                     <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
-                    Dados em Tempo Real
+                    Dados Local
+                  </>
+                ) : dataSource === 'vercel' ? (
+                  <>
+                    <Globe className="h-3 w-3 sm:h-4 sm:w-4" />
+                    Dados Vercel
                   </>
                 ) : (
                   <>
                     <Activity className="h-3 w-3 sm:h-4 sm:w-4" />
-                    Dados de Demonstração
+                    Dados Demo
                   </>
                 )}
               </Badge>
@@ -231,26 +266,65 @@ const AdminBI = () => {
           <div className="mt-4 p-3 bg-muted/50 rounded-lg">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm">
               <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-                <span className={`font-medium text-xs sm:text-sm ${dataSource === 'backend' ? 'text-green-600' : 'text-amber-600'}`}>
-                  {dataSource === 'backend' ? '✅ Conectado ao Backend' : '🔄 Usando Dados de Demonstração'}
+                <span className={`font-medium text-xs sm:text-sm flex items-center gap-2 ${
+                  dataSource === 'local' ? 'text-green-600' : 
+                  dataSource === 'vercel' ? 'text-blue-600' : 
+                  'text-amber-600'
+                }`}>
+                  {dataSource === 'local' ? (
+                    <>✅ Conectado ao Backend Local</>
+                  ) : dataSource === 'vercel' ? (
+                    <>🌐 Conectado ao Vercel API</>
+                  ) : (
+                    <>
+                      <AlertCircle className="h-4 w-4" />
+                      Usando Dados de Demonstração
+                    </>
+                  )}
                 </span>
                 <span className="text-xs sm:text-sm text-muted-foreground">
                   Última atualização: {lastUpdate.toLocaleTimeString()}
                 </span>
               </div>
               {dataSource === 'mock' && (
-                <button 
-                  onClick={fetchDashboardData}
-                  className="text-primary hover:underline text-xs sm:text-sm"
-                >
-                  Tentar reconectar
-                </button>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button 
+                    onClick={fetchDashboardData}
+                    className="text-primary hover:underline text-xs sm:text-sm"
+                  >
+                    Tentar reconectar
+                  </button>
+                  {connectionError && (
+                    <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
+                      {connectionError}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           </div>
+
+          {/* Aviso apenas se estiver em desenvolvimento e usando mock */}
+          {dataSource === 'mock' && process.env.NODE_ENV === 'development' && (
+            <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="font-semibold text-amber-800 text-sm">Backend Local Offline</h4>
+                  <p className="text-amber-700 text-sm mt-1">
+                    O servidor local não está disponível. Estamos mostrando dados de demonstração.
+                  </p>
+                  <div className="mt-2 text-xs text-amber-600">
+                    <strong>Para dados locais:</strong> Execute <code className="bg-amber-100 px-1 rounded">npm run dev</code> no diretório do backend
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* ML Insights Cards - Responsivo */}
+        {/* Conteúdo dos gráficos */}
+        {/* ML Insights Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card className="shadow-card bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
             <CardContent className="p-4 sm:p-6">
@@ -337,7 +411,7 @@ const AdminBI = () => {
           </Card>
         </div>
 
-        {/* Tabs for Different Analyses - Responsivo */}
+        {/* Tabs para diferentes análises */}
         <Tabs defaultValue="predictions" className="space-y-4 sm:space-y-6">
           <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto">
             <TabsTrigger value="predictions" className="text-xs sm:text-sm py-2 sm:py-3">
@@ -354,7 +428,7 @@ const AdminBI = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Predictions Tab */}
+          {/* Conteúdo das tabs */}
           <TabsContent value="predictions" className="space-y-4 sm:space-y-6">
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
               <Card className="shadow-card">
@@ -388,14 +462,6 @@ const AdminBI = () => {
                           strokeWidth={3}
                           name="Real" 
                         />
-                        <Line 
-                          type="monotone" 
-                          dataKey="confianca" 
-                          stroke="hsl(var(--accent))" 
-                          strokeWidth={2}
-                          strokeDasharray="5 5"
-                          name="Confiança (%)" 
-                        />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
@@ -418,78 +484,12 @@ const AdminBI = () => {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="mt-4 space-y-2">
-                    {data.conversionFunnel.map((item, idx) => {
-                      const conversion = idx > 0 ? ((item.total / data.conversionFunnel[idx - 1].total) * 100).toFixed(1) : 100;
-                      return (
-                        <div key={item.stage} className="flex items-center justify-between text-xs sm:text-sm">
-                          <span className="text-muted-foreground truncate">{item.stage}</span>
-                          <span className="font-semibold">{conversion}%</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
-              <Card className="shadow-card">
-                <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Imóveis Mais Buscados vs Taxa de Conversão</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-60 sm:h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart data={data.searchData} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" fontSize={12} />
-                        <YAxis 
-                          dataKey="property" 
-                          type="category" 
-                          width={120}
-                          fontSize={10}
-                          tick={{ fontSize: 10 }}
-                        />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="views" fill="hsl(var(--primary))" name="Visualizações" />
-                        <Line 
-                          dataKey="conversao" 
-                          stroke="hsl(var(--secondary))" 
-                          strokeWidth={3}
-                          name="Conversão (%)" 
-                        />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-card">
-                <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Crescimento por Região</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-60 sm:h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={data.regionData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="region" fontSize={12} />
-                        <YAxis fontSize={12} />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="value" fill="hsl(var(--primary))" name="Demanda Atual" />
-                        <Bar dataKey="growth" fill="hsl(var(--secondary))" name="Crescimento (%)" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
 
-          {/* Heatmaps Tab */}
+          {/* Outras tabs... */}
           <TabsContent value="heatmaps" className="space-y-4 sm:space-y-6">
             <Card className="shadow-card">
               <CardHeader>
@@ -524,65 +524,17 @@ const AdminBI = () => {
                     </div>
                   ))}
                 </div>
-                <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 sm:w-4 sm:h-4 rounded" style={{ backgroundColor: '#EF4444' }} />
-                    <span>Baixa (0-54)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 sm:w-4 sm:h-4 rounded" style={{ backgroundColor: '#F59E0B' }} />
-                    <span>Média (55-69)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 sm:w-4 sm:h-4 rounded" style={{ backgroundColor: '#3B82F6' }} />
-                    <span>Alta (70-84)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 sm:w-4 sm:h-4 rounded" style={{ backgroundColor: '#10B981' }} />
-                    <span>Muito Alta (85+)</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">Distribuição de Demanda Regional</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-60 sm:h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={data.regionData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={true}
-                        label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {data.regionData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Lead Score Tab */}
           <TabsContent value="leads" className="space-y-4 sm:space-y-6">
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
               <Card className="shadow-card">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                     <Brain className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                    Distribuição de Score de Leads (IA)
+                    Distribuição de Score de Leads
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -593,80 +545,21 @@ const AdminBI = () => {
                         <XAxis dataKey="score" fontSize={12} />
                         <YAxis fontSize={12} />
                         <Tooltip />
-                        <Legend />
                         <Bar dataKey="quantidade" fill="hsl(var(--primary))" name="Quantidade de Leads" />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 </CardContent>
               </Card>
-
-              <Card className="shadow-card">
-                <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Taxa de Conversão por Score</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-60 sm:h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={data.leadScoreData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="score" fontSize={12} />
-                        <YAxis fontSize={12} />
-                        <Tooltip />
-                        <Legend />
-                        <Line 
-                          type="monotone" 
-                          dataKey="conversao" 
-                          stroke="hsl(var(--secondary))" 
-                          strokeWidth={3}
-                          name="Taxa de Conversão (%)" 
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="mt-4 p-3 sm:p-4 bg-secondary/10 rounded-lg">
-                    <p className="text-sm font-medium">Insight ML:</p>
-                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                      Leads com score acima de 80 têm 28% de taxa de conversão, 14x maior que scores baixos. 
-                      Recomenda-se priorizar follow-up nesta faixa.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
-
-            <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">Análise Comparativa: Score vs Conversão</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-60 sm:h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="quantidade" name="Quantidade" fontSize={12} />
-                      <YAxis dataKey="conversao" name="Conversão %" fontSize={12} />
-                      <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                      <Legend />
-                      <Scatter 
-                        name="Score vs Conversão" 
-                        data={data.leadScoreData} 
-                        fill="hsl(var(--accent))" 
-                      />
-                    </ScatterChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
 
-          {/* Performance Tab */}
           <TabsContent value="performance" className="space-y-4 sm:space-y-6">
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   <Target className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                  Performance por Categoria (Radar ML)
+                  Performance por Categoria
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -694,20 +587,6 @@ const AdminBI = () => {
                       <Tooltip />
                     </RadarChart>
                   </ResponsiveContainer>
-                </div>
-                <div className="mt-4 sm:mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                  <div className="p-3 sm:p-4 bg-secondary/10 rounded-lg">
-                    <p className="text-xs sm:text-sm font-medium text-secondary">Top Performer</p>
-                    <p className="text-lg sm:text-2xl font-bold mt-1">Preço (92%)</p>
-                  </div>
-                  <div className="p-3 sm:p-4 bg-primary/10 rounded-lg">
-                    <p className="text-xs sm:text-sm font-medium text-primary">Acima da Meta</p>
-                    <p className="text-lg sm:text-2xl font-bold mt-1">4 de 5</p>
-                  </div>
-                  <div className="p-3 sm:p-4 bg-accent/10 rounded-lg">
-                    <p className="text-xs sm:text-sm font-medium text-accent">Melhoria Necessária</p>
-                    <p className="text-lg sm:text-2xl font-bold mt-1">Amenidades</p>
-                  </div>
                 </div>
               </CardContent>
             </Card>
