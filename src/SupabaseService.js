@@ -314,48 +314,77 @@ static async getSalesStats() {
 
 
 // Buscar dados de propriedades por região (agrupado)
+// Substituir o método getPropertiesByRegion no SupabaseService.js
 static async getPropertiesByRegion() {
   try {
     console.log('🔍 Buscando propriedades agrupadas por região...');
     
-    const { data, error } = await supabase
-      .from('properties')
-      .select('address, price, status')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('❌ Erro ao buscar propriedades por região:', error);
+    const properties = await this.getAllProperties();
+    
+    if (!properties || properties.length === 0) {
+      console.log('⚠️ Nenhuma propriedade encontrada para agrupar por região');
       return null;
     }
 
-    // Agrupar por região (assumindo que address contém neighborhood)
-    const regionData = data?.reduce((acc, property) => {
-      const address = property.address || {};
-      const region = address.neighborhood || 'Desconhecida';
+    // Agrupar por região usando a estrutura REAL da tabela properties_rows
+    const regionData = properties.reduce((acc, property) => {
+      let region = 'Desconhecida';
+      let city = 'Desconhecida';
       
-      if (!acc[region]) {
-        acc[region] = {
-          region: region,
+      // Trata diferentes formatos de endereço da tabela properties_rows
+      if (property.address) {
+        if (typeof property.address === 'string') {
+          try {
+            const addressObj = JSON.parse(property.address);
+            region = addressObj.neighborhood || addressObj.city || 'Desconhecida';
+            city = addressObj.city || 'Desconhecida';
+          } catch {
+            // Se não for JSON, tenta extrair de outros campos
+            region = property.address;
+          }
+        } else if (typeof property.address === 'object') {
+          region = property.address.neighborhood || property.address.city || 'Desconhecida';
+          city = property.address.city || 'Desconhecida';
+        }
+      }
+      
+      // Usa city como região principal se neighborhood não estiver disponível
+      const regionKey = region !== 'Desconhecida' ? region : city;
+      
+      if (!acc[regionKey]) {
+        acc[regionKey] = {
+          region: regionKey,
           property_count: 0,
           average_price: 0,
           total_price: 0,
-          sales: 0
+          sales: 0,
+          total_size: 0,
+          average_size: 0
         };
       }
       
-      acc[region].property_count++;
-      acc[region].total_price += property.price || 0;
-      acc[region].average_price = acc[region].total_price / acc[region].property_count;
+      acc[regionKey].property_count++;
+      acc[regionKey].total_price += parseFloat(property.price) || 0;
+      acc[regionKey].total_size += parseFloat(property.size) || 0;
+      acc[regionKey].average_price = acc[regionKey].total_price / acc[regionKey].property_count;
+      acc[regionKey].average_size = acc[regionKey].total_size / acc[regionKey].property_count;
       
+      // Conta propriedades vendidas
       if (property.status === 'sold') {
-        acc[region].sales++;
+        acc[regionKey].sales++;
       }
       
       return acc;
     }, {});
 
-    const result = Object.values(regionData || {});
-    console.log(`✅ ${result.length} regiões processadas`);
+    const result = Object.values(regionData);
+    console.log(`✅ ${result.length} regiões processadas com ${properties.length} propriedades`);
+    
+    // Log para debug
+    result.forEach(region => {
+      console.log(`📍 ${region.region}: ${region.property_count} imóveis, R$ ${Math.round(region.average_price).toLocaleString('pt-BR')} médio`);
+    });
+    
     return result;
 
   } catch (error) {
