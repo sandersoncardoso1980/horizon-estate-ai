@@ -65,49 +65,43 @@ static async getAllProperties() {
   }
 }
 
-// Buscar todas as propriedades
-static async getAllProperties() {
-  try {
-    console.log('🔍 Buscando propriedades no Supabase...');
-    
-    const { data, error } = await supabase
-      .from('properties')
-      .select('*')
-      .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('❌ Erro ao buscar propriedades:', error);
-      return null;
-    }
-
-    console.log(`✅ ${data?.length || 0} propriedades carregadas`);
-    return data;
-  } catch (error) {
-    console.error('❌ Erro inesperado em getAllProperties:', error);
-    return null;
-  }
-}
 
 // Buscar dados de vendas
+// Método CORRETO para buscar vendas baseado em properties_rows
 static async getSalesData() {
   try {
-    console.log('🔍 Buscando dados de vendas no Supabase...');
+    console.log('🔍 Buscando dados REAIS de vendas de properties_rows...');
     
-    const { data, error } = await supabase
-      .from('sales')
-      .select('*')
-      .order('sale_date', { ascending: false });
-
-    if (error) {
-      console.error('❌ Erro ao buscar vendas:', error);
-      return null;
+    const properties = await this.getAllProperties();
+    
+    if (!properties || properties.length === 0) {
+      console.log('⚠️ Nenhuma propriedade encontrada');
+      return [];
     }
 
-    console.log(`✅ ${data?.length || 0} vendas carregadas`);
-    return data;
+    // Filtra apenas propriedades vendidas
+    const soldProperties = properties.filter(property => property.status === 'sold');
+    
+    // Converte para o formato de sales
+    const salesData = soldProperties.map(property => ({
+      id: property.id,
+      property_id: property.id,
+      final_price: property.price,
+      sale_date: property.updated_at || property.created_at,
+      commission: parseFloat(property.price) * 0.05, // 5% de comissão estimada
+      status: 'completed',
+      property_title: property.title,
+      // Mantém compatibilidade com estrutura esperada
+      ...property
+    }));
+
+    console.log(`✅ ${salesData.length} vendas REAIS carregadas de properties_rows`);
+    return salesData;
+
   } catch (error) {
-    console.error('❌ Erro inesperado em getSalesData:', error);
-    return null;
+    console.error('❌ Erro ao buscar vendas reais:', error);
+    return [];
   }
 }
 
