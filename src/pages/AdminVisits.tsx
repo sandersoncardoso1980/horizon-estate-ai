@@ -61,75 +61,82 @@ const AdminVisits = () => {
       <Navbar />
       <AdminSidebar />
       
-      <main className="ml-64 pt-20 p-8">
-        <div className="flex items-center justify-between mb-8">
+      {/* Main content adaptável ao sidebar */}
+      <main className="lg:ml-64 pt-16 lg:pt-20 p-4 sm:p-6 lg:p-8 transition-all duration-200">
+        {/* Header responsivo */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Gerenciar Visitas</h1>
-            <p className="text-muted-foreground">Agenda de visitas e acompanhamento</p>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Gerenciar Visitas</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Agenda de visitas e acompanhamento
+            </p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2 w-full sm:w-auto">
             <Plus className="h-4 w-4" />
             Agendar Visita
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        {/* Cards de estatísticas responsivos */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card className="shadow-card">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <p className="text-sm text-muted-foreground mb-1">Hoje</p>
-              <h3 className="text-3xl font-bold text-primary">{todayVisits.length}</h3>
+              <h3 className="text-2xl sm:text-3xl font-bold text-primary">{todayVisits.length}</h3>
             </CardContent>
           </Card>
           <Card className="shadow-card">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <p className="text-sm text-muted-foreground mb-1">Esta Semana</p>
-              <h3 className="text-3xl font-bold">15</h3>
+              <h3 className="text-2xl sm:text-3xl font-bold">15</h3>
             </CardContent>
           </Card>
           <Card className="shadow-card">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <p className="text-sm text-muted-foreground mb-1">Realizadas</p>
-              <h3 className="text-3xl font-bold text-secondary">142</h3>
+              <h3 className="text-2xl sm:text-3xl font-bold text-secondary">142</h3>
             </CardContent>
           </Card>
           <Card className="shadow-card">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <p className="text-sm text-muted-foreground mb-1">Taxa de Conversão</p>
-              <h3 className="text-3xl font-bold">32%</h3>
+              <h3 className="text-2xl sm:text-3xl font-bold">32%</h3>
             </CardContent>
           </Card>
         </div>
 
         {/* Próximas Visitas de Hoje */}
         {todayVisits.length > 0 && (
-          <Card className="shadow-card mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <Card className="shadow-card mb-6 sm:mb-8">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <CalendarIcon className="h-5 w-5 text-primary" />
                 Visitas de Hoje
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6 pt-0">
               <div className="space-y-3">
                 {todayVisits.map((visit) => (
-                  <div key={visit.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-primary/10 p-3 rounded-lg">
+                  <div key={visit.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-muted/50 rounded-lg gap-4">
+                    <div className="flex items-start sm:items-center gap-4">
+                      <div className="bg-primary/10 p-3 rounded-lg flex-shrink-0">
                         <Clock className="h-5 w-5 text-primary" />
                       </div>
-                      <div>
-                        <p className="font-semibold">{visit.time} - {visit.client}</p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {visit.property}
+                      <div className="flex-1">
+                        <p className="font-semibold text-sm sm:text-base">{visit.time} - {visit.client}</p>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                          <MapPin className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{visit.property}</span>
                         </p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                          <User className="h-3 w-3" />
+                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                          <User className="h-3 w-3 flex-shrink-0" />
                           Corretor: {visit.broker}
                         </p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">Ver Detalhes</Button>
+                    <Button variant="outline" size="sm" className="w-full sm:w-auto mt-2 sm:mt-0">
+                      Ver Detalhes
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -137,63 +144,109 @@ const AdminVisits = () => {
           </Card>
         )}
 
-        <Card className="shadow-card mb-6">
-          <CardContent className="p-6">
-            <div className="flex gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar por cliente, imóvel ou corretor..." className="pl-10" />
+        {/* Barra de busca e filtros responsiva */}
+        <Card className="shadow-card mb-6 sm:mb-8">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input 
+                  placeholder="Buscar por cliente, imóvel ou corretor..." 
+                  className="pl-10"
+                />
               </div>
-              <Button variant="outline">Filtros</Button>
+              <Button variant="outline" className="gap-2 w-full sm:w-auto">
+                <span>Filtros</span>
+              </Button>
             </div>
           </CardContent>
         </Card>
 
+        {/* Tabela de visitas com scroll horizontal */}
         <Card className="shadow-card">
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data/Hora</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Imóvel</TableHead>
-                  <TableHead>Corretor</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {visits.map((visit) => (
-                  <TableRow key={visit.id}>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{visit.date}</span>
-                        <span className="text-sm text-muted-foreground">{visit.time}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">{visit.client}</TableCell>
-                    <TableCell>{visit.property}</TableCell>
-                    <TableCell>{visit.broker}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={
-                          visit.status === "Agendada" ? "default" : 
-                          visit.status === "Realizada" ? "secondary" : 
-                          "destructive"
-                        }
-                      >
-                        {visit.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button size="sm" variant="outline">Detalhes</Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="whitespace-nowrap">Data/Hora</TableHead>
+                    <TableHead className="whitespace-nowrap">Cliente</TableHead>
+                    <TableHead className="whitespace-nowrap">Imóvel</TableHead>
+                    <TableHead className="whitespace-nowrap">Corretor</TableHead>
+                    <TableHead className="whitespace-nowrap">Status</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">Ações</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {visits.map((visit) => (
+                    <TableRow key={visit.id}>
+                      <TableCell className="whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm sm:text-base">{visit.date}</span>
+                          <span className="text-xs sm:text-sm text-muted-foreground">{visit.time}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium whitespace-nowrap">{visit.client}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <span className="max-w-[150px] sm:max-w-none truncate block">
+                          {visit.property}
+                        </span>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">{visit.broker}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <Badge 
+                          variant={
+                            visit.status === "Agendada" ? "default" : 
+                            visit.status === "Realizada" ? "secondary" : 
+                            "destructive"
+                          }
+                          className="whitespace-nowrap"
+                        >
+                          {visit.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" variant="outline" className="whitespace-nowrap">
+                          Detalhes
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
+
+        {/* Status do Sistema */}
+        <div className="p-4 bg-muted rounded-lg mt-6 sm:mt-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1">
+              <h3 className="font-semibold text-sm sm:text-base">Sistema de Visitas</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                {visits.length} visitas no sistema
+              </p>
+              <div className="flex gap-2 mt-2 flex-wrap">
+                <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                  📅 {todayVisits.length} Hoje
+                </Badge>
+                <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                  ✅ 142 Realizadas
+                </Badge>
+                <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                  📊 32% Conversão
+                </Badge>
+              </div>
+            </div>
+            <Button 
+              variant="outline"
+              size="sm"
+              className="gap-2 w-full sm:w-auto"
+            >
+              <span>Atualizar</span>
+            </Button>
+          </div>
+        </div>
       </main>
     </div>
   );
