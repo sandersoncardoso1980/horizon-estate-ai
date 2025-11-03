@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useEffect, useState } from "react";
-import { SupabaseService} from "../SupabaseService";
+import { SupabaseService} from "../../backend/SupabaseService";
 
 interface Lead {
   id: number;
@@ -184,10 +184,12 @@ const AdminLeads = () => {
       <div className="min-h-screen bg-background">
         <Navbar />
         <AdminSidebar />
-        <main className="ml-64 pt-20 p-8">
+        <main className="lg:ml-64 pt-16 lg:pt-20 p-4 sm:p-6 lg:p-8 transition-all duration-200">
           <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2">Carregando leads...</span>
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-4 text-muted-foreground">Carregando leads...</p>
+            </div>
           </div>
         </main>
       </div>
@@ -199,38 +201,52 @@ const AdminLeads = () => {
       <Navbar />
       <AdminSidebar />
       
-      <main className="ml-64 pt-20 p-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Gerenciar Leads</h1>
-          <p className="text-muted-foreground">Acompanhe e qualifique seus leads com IA</p>
+      {/* Main content adaptável ao sidebar - MESMA ESTRUTURA DO ADMIN CLIENTS */}
+      <main className="lg:ml-64 pt-16 lg:pt-20 p-4 sm:p-6 lg:p-8 transition-all duration-200">
+        {/* Header responsivo */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Gerenciar Leads</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Acompanhe e qualifique seus leads com IA
+            </p>
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button onClick={loadLeadsData} disabled={loading} variant="outline" className="gap-2 w-full sm:w-auto">
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Atualizar</span>
+            </Button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {/* Cards de estatísticas responsivos */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card className="shadow-card">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <p className="text-sm text-muted-foreground mb-1">Leads Quentes</p>
-              <h3 className="text-3xl font-bold text-secondary">{stats.hotLeads}</h3>
+              <h3 className="text-2xl sm:text-3xl font-bold text-secondary">{stats.hotLeads}</h3>
             </CardContent>
           </Card>
           <Card className="shadow-card">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <p className="text-sm text-muted-foreground mb-1">Leads Mornos</p>
-              <h3 className="text-3xl font-bold text-primary">{stats.warmLeads}</h3>
+              <h3 className="text-2xl sm:text-3xl font-bold text-primary">{stats.warmLeads}</h3>
             </CardContent>
           </Card>
           <Card className="shadow-card">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <p className="text-sm text-muted-foreground mb-1">Leads Frios</p>
-              <h3 className="text-3xl font-bold text-muted-foreground">{stats.coldLeads}</h3>
+              <h3 className="text-2xl sm:text-3xl font-bold text-muted-foreground">{stats.coldLeads}</h3>
             </CardContent>
           </Card>
         </div>
 
-        <Card className="shadow-card mb-6">
-          <CardContent className="p-6">
-            <div className="flex gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        {/* Barra de busca e filtros responsiva */}
+        <Card className="shadow-card mb-6 sm:mb-8">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input 
                   placeholder="Buscar leads por nome ou email..." 
                   className="pl-10"
@@ -238,68 +254,102 @@ const AdminLeads = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <Button variant="outline">Filtros</Button>
-              <Button onClick={loadLeadsData} disabled={loading}>
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                Atualizar
+              <Button variant="outline" className="gap-2 w-full sm:w-auto">
+                <span>Filtros</span>
               </Button>
             </div>
           </CardContent>
         </Card>
 
+        {/* Tabela de leads com scroll horizontal */}
         <Card className="shadow-card">
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Telefone</TableHead>
-                  <TableHead>Orçamento</TableHead>
-                  <TableHead>Score IA</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Localização</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredLeads.length === 0 ? (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      {leads.length === 0 ? "Nenhum lead encontrado" : "Nenhum lead corresponde à busca"}
-                    </TableCell>
+                    <TableHead className="whitespace-nowrap">Nome</TableHead>
+                    <TableHead className="whitespace-nowrap">Email</TableHead>
+                    <TableHead className="whitespace-nowrap">Telefone</TableHead>
+                    <TableHead className="whitespace-nowrap">Orçamento</TableHead>
+                    <TableHead className="whitespace-nowrap">Score IA</TableHead>
+                    <TableHead className="whitespace-nowrap">Status</TableHead>
+                    <TableHead className="whitespace-nowrap">Localização</TableHead>
                   </TableRow>
-                ) : (
-                  filteredLeads.map((lead) => (
-                    <TableRow key={lead.id}>
-                      <TableCell className="font-medium">{lead.name}</TableCell>
-                      <TableCell>{lead.email}</TableCell>
-                      <TableCell>{formatPhone(lead.phone || "")}</TableCell>
-                      <TableCell>
-                        {formatBudget(lead.budget_min, lead.budget_max)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Star className={`h-4 w-4 ${getScoreColor(lead.ml_lead_score)}`} />
-                          <span className={`font-semibold ${getScoreColor(lead.ml_lead_score)}`}>
-                            {lead.ml_lead_score}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(lead.ml_lead_score)}`}>
-                          {getStatusText(lead.ml_lead_score)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {lead.preferred_locations || "Não especificado"}
+                </TableHeader>
+                <TableBody>
+                  {filteredLeads.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        {leads.length === 0 ? "Nenhum lead encontrado" : "Nenhum lead corresponde à busca"}
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    filteredLeads.map((lead) => (
+                      <TableRow key={lead.id}>
+                        <TableCell className="font-medium whitespace-nowrap">{lead.name}</TableCell>
+                        <TableCell className="whitespace-nowrap">{lead.email}</TableCell>
+                        <TableCell className="whitespace-nowrap">{formatPhone(lead.phone || "")}</TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {formatBudget(lead.budget_min, lead.budget_max)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <Star className={`h-4 w-4 ${getScoreColor(lead.ml_lead_score)}`} />
+                            <span className={`font-semibold ${getScoreColor(lead.ml_lead_score)}`}>
+                              {lead.ml_lead_score}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(lead.ml_lead_score)}`}>
+                            {getStatusText(lead.ml_lead_score)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {lead.preferred_locations || "Não especificado"}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
+
+        {/* Status do Sistema - igual ao AdminClients */}
+        <div className="p-4 bg-muted rounded-lg mt-6 sm:mt-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1">
+              <h3 className="font-semibold text-sm sm:text-base">Sistema de Leads</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                {leads.length} leads no sistema
+              </p>
+              <div className="flex gap-2 mt-2 flex-wrap">
+                <span className="px-2 py-1 rounded-full text-xs bg-secondary/10 text-secondary whitespace-nowrap">
+                  🔥 {stats.hotLeads} Quentes
+                </span>
+                <span className="px-2 py-1 rounded-full text-xs bg-primary/10 text-primary whitespace-nowrap">
+                  🌤️ {stats.warmLeads} Mornos
+                </span>
+                <span className="px-2 py-1 rounded-full text-xs bg-muted text-muted-foreground whitespace-nowrap">
+                  ❄️ {stats.coldLeads} Frios
+                </span>
+              </div>
+            </div>
+            <Button 
+              onClick={loadLeadsData}
+              variant="outline"
+              size="sm"
+              className="gap-2 w-full sm:w-auto"
+              disabled={loading}
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              <span>Atualizar</span>
+            </Button>
+          </div>
+        </div>
       </main>
     </div>
   );
