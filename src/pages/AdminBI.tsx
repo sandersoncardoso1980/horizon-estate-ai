@@ -381,13 +381,20 @@ summary: resumo executivo em 2-3 frases – um overview rápido, como se fosse p
         )}
 
         <Tabs defaultValue="insights" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="insights">Insights</TabsTrigger>
-            <TabsTrigger value="charts">Gráficos</TabsTrigger>
-            <TabsTrigger value="recommendations">Recomendações</TabsTrigger>
-            <TabsTrigger value="risks">Alertas</TabsTrigger>
-          </TabsList>
-
+        <TabsList className="flex flex-wrap md:grid md:grid-cols-4 gap-1 w-full">
+  <TabsTrigger value="insights" className="flex-1 min-w-0 text-xs md:text-sm truncate">
+    Insights
+  </TabsTrigger>
+  <TabsTrigger value="charts" className="flex-1 min-w-0 text-xs md:text-sm truncate">
+    Gráficos
+  </TabsTrigger>
+  <TabsTrigger value="recommendations" className="flex-1 min-w-0 text-xs md:text-sm truncate">
+    Recomendações
+  </TabsTrigger>
+  <TabsTrigger value="risks" className="flex-1 min-w-0 text-xs md:text-sm truncate">
+    Alertas
+  </TabsTrigger>
+</TabsList>
           {/* Aba de Insights */}
           <TabsContent value="insights" className="space-y-6">
             {groqAnalysis && (
